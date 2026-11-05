@@ -111,6 +111,6 @@ Problem, Workflow (link to docs), Design decisions, How to run, Test results (re
 Limitations, AI assistance (honest: what AI generated vs what I specified, decided, and changed).
 
 ## Progress log
-- Current phase: 0
-- Decisions made:
-- Changes after engineer review:
+- Current phase: 6 complete; public web-demo extension added after the original phase plan.
+- Decisions made: fake-data browser demo uses Python's standard-library HTTP server; no accounts or persistence; Render deployment instructions are documented.
+- Changes after engineer review: pending engineer review.
