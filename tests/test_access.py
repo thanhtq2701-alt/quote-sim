@@ -1,6 +1,6 @@
 import pytest
 
-from quote_sim.access import Action, PermissionDenied, Role, check_permission
+from quote_sim.access import Action, PermissionDenied, Role, check_permission, is_allowed
 
 
 def test_agent_can_create_quote() -> None:
@@ -82,3 +82,8 @@ def test_viewer_cannot_create_quote() -> None:
 def test_viewer_cannot_edit_draft() -> None:
     with pytest.raises(PermissionDenied):
         check_permission(Role.VIEWER, Action.EDIT_DRAFT)
+
+
+def test_is_allowed_returns_false_instead_of_raising() -> None:
+    assert is_allowed(Role.MANAGER, Action.VIEW_COST_MARGIN) is True
+    assert is_allowed(Role.SALES, Action.VIEW_COST_MARGIN) is False

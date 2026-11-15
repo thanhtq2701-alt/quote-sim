@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>quote-sim · quote workflow simulator</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">QS</span>
+      <div>
+        <h1>quote-sim</h1>
+        <p>AI-agent-assisted sales quotes · humans approve · every number has evidence</p>
+      </div>
+    </div>
+    <button id="reset" class="button ghost" type="button">Reset simulation</button>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <section class="card">
+        <h2>Acting as</h2>
+        <select id="actor-select" aria-label="Acting user"></select>
+        <p class="hint">Every button you press is performed as this user, and quotes are shown
+          from their point of view.</p>
+        <div id="actor-permissions" class="chips" aria-label="Allowed actions"></div>
+      </section>
+
+      <section class="card">
+        <h2>Ask the agent</h2>
+        <p class="hint">A rule-based stand-in for an AI agent — no LLM. It drafts; humans decide.</p>
+        <form id="agent-form" class="stack">
+          <label>Request
+            <textarea id="agent-request" rows="3" spellcheck="false">I need a dozen widgets and 2 support plans, please</textarea>
+          </label>
+          <p class="hint">Plain English works: "twenty widgets and 3 cables with a 10% discount using
+            v2 prices". If something is unclear, the agent asks instead of guessing.</p>
+          <label>Price list
+            <select id="agent-version"></select>
+          </label>
+          <button class="button primary" type="submit">Draft quote</button>
+        </form>
+        <details>
+          <summary>Agent's discount rules</summary>
+          <table class="mini" id="agent-rules"></table>
+        </details>
+      </section>
+
+      <section class="card">
+        <h2>Try a scenario</h2>
+        <div id="scenarios" class="scenario-list"></div>
+      </section>
+
+      <section class="card">
+        <h2>Policy</h2>
+        <dl id="policy" class="policy"></dl>
+        <details>
+          <summary>Published price lists</summary>
+          <div id="price-lists"></div>
+        </details>
+      </section>
+    </aside>
+
+    <div class="content">
+      <div id="banner" class="banner" role="status" hidden></div>
+
+      <section>
+        <div class="section-head">
+          <h2>Quotes</h2>
+          <span id="quote-count" class="muted"></span>
+        </div>
+        <div id="quotes" class="quotes"></div>
+      </section>
+
+      <section class="card">
+        <div class="section-head">
+          <h2>Audit log</h2>
+          <label class="toggle"><input type="checkbox" id="show-reads"> Show read entries</label>
+        </div>
+        <p class="hint">Append-only. Denied and failed attempts are recorded too. Times are simulated
+          (one minute per entry).</p>
+        <div class="table-wrap">
+          <table id="audit" class="audit"></table>
+        </div>
+        <p id="hidden-reads" class="muted small"></p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    Fake data only. The agent is rule-based and makes no LLM or external API calls. Nothing you do
+    here is saved: the server replays your steps from scratch on every click.
+  </footer>
+</body>
+</html>

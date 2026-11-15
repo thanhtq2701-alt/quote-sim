@@ -1,0 +1,10 @@
+{
+  "users": [
+    {"user_id": "agent-01", "display_name": "Quote Bot (simulated agent)", "role": "agent"},
+    {"user_id": "sales-01", "display_name": "Sales Rep A (fake)", "role": "sales"},
+    {"user_id": "sales-02", "display_name": "Sales Rep B (fake)", "role": "sales"},
+    {"user_id": "manager-01", "display_name": "Manager M1 (fake)", "role": "manager"},
+    {"user_id": "manager-02", "display_name": "Manager M2 (fake)", "role": "manager"},
+    {"user_id": "viewer-01", "display_name": "Viewer V1 (fake)", "role": "viewer"}
+  ]
+}

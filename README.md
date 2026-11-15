@@ -14,7 +14,8 @@ All data is fake; the simulated agent is rule-based and does not call an LLM or 
 ## Workflow
 
 The current draft workflow map is in [docs/workflow.md](docs/workflow.md) and is pending engineer
-review.
+review. The repository layout, architecture, module map, and open questions are in
+[docs/PROJECT.md](docs/PROJECT.md).
 
 ## Design decisions
 
@@ -36,6 +37,16 @@ review.
   version, unit-price snapshot, and explicit discount-rule id. Submission requires valid evidence.
 - The demo's named pricing and approval values are illustrative scenario inputs, not application
   defaults.
+- Every action goes through `QuoteDesk`, which looks the actor's role up in the fake user
+  directory (callers cannot claim a role) and audits creates, edits, and reads as well as
+  workflow transitions. Margin is visible only to MANAGER and is rounded to cents like other
+  money values.
+- The simulated agent is rule-based. It understands plain-English requests (quantities as digits
+  or words, short product names, plurals, one discount, a price-list version) and asks instead of
+  guessing whenever something is unclear; a misunderstood request creates nothing.
+- Discount input: `10%` or `10 percent` is a percentage; a number above 1 can only be a
+  percentage; `0` is zero; a number from 0 to 1 (such as `0.3`) is ambiguous, so the person is
+  asked whether they meant 0.3% or 30%.
 
 ## How to run
 
@@ -45,8 +56,14 @@ In PowerShell, from the project root:
 py -3.14 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
+python -m tools.check_data
 python -m pytest
 ```
+
+`tools.check_data` checks the fake files in `data/` (every price list is listed in
+`quote_sim/config.py` and named after its version, every role has a user, every product sold in
+the newest price list has a cost). GitHub Actions runs the same two commands on Python 3.11, 3.12,
+3.13, and 3.14 for every push and pull request.
 
 The virtual environment is local and excluded from Git. Use a Python 3.11+ launcher version in
 place of `3.14` if needed.
@@ -57,27 +74,42 @@ Run the scripted demo from the project root:
 python -m quote_sim.demo
 ```
 
-It loads the fake v1 price list, creates and evidences a draft quote, submits it for manager
-approval, sends the approved quote, then prints its totals and audit entries.
+The agent drafts a quote from a plain-English request; sales submits it; a sales attempt to approve
+it is denied; a manager approves it; the same quote is shown to a manager (with margin) and a
+viewer (without); sales sends it. The audit log printed at the end is the one the desk wrote.
 
 Run the browser demo locally:
 
 ```powershell
-python -m quote_sim.web
+python -m server
 ```
 
-Open `http://localhost:8000`. The form simulates a quote for fake data without saving it. See
+Open `http://localhost:8000`. Pick who you are acting as, ask the rule-based agent to draft a
+quote, then submit, approve, reject, or send it as different users. Quotes are shown from the
+acting user's point of view (only managers see cost and margin), and the audit log lists every
+attempt, including denied ones. Nothing is saved: the browser keeps the list of steps and the
+server replays them on a fresh in-memory desk for every click. See
 [docs/deployment.md](docs/deployment.md) for public hosting instructions.
 
 ## Test results
 
-Verified with `python -m pytest -q`: 71 tests passed.
+Verified with `python -m pytest -q`: 156 tests passed.
 
-- `tests/test_pricing.py` — 14 tests.
-- `tests/test_access.py` — 19 tests.
+- `tests/test_access.py` — 20 tests.
+- `tests/test_agent.py` — 23 tests.
 - `tests/test_approval.py` — 17 tests.
-- `tests/test_evidence.py` — 14 tests.
-- `tests/test_web.py` — 7 tests.
+- `tests/test_check_data.py` — 7 tests.
+- `tests/test_demo.py` — 4 tests.
+- `tests/test_evidence.py` — 16 tests.
+- `tests/test_interpret.py` — 9 tests.
+- `tests/test_pricing.py` — 14 tests.
+- `tests/test_server.py` — 17 tests.
+- `tests/test_service.py` — 16 tests.
+- `tests/test_users.py` — 5 tests.
+- `tests/test_views.py` — 8 tests.
+
+Counts include parametrized cases (one test function run with several inputs counts once per
+input).
 
 ## Limitations
 

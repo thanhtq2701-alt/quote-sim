@@ -1,0 +1,9 @@
+{
+  "version": "v3",
+  "products": {
+    "sample-widget": "12.00",
+    "sample-gadget": "45.00",
+    "sample-cable": "3.50",
+    "sample-support-plan": "120.00"
+  }
+}

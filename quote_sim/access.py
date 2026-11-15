@@ -60,6 +60,15 @@ class PermissionDenied(PermissionError):
     """Make forbidden operations explicit so callers cannot treat them as successful."""
 
 
+def is_allowed(role: Role, action: Action) -> bool:
+    """Answer "may this role?" for display decisions where a refusal is not an error."""
+    try:
+        check_permission(role, action)
+    except PermissionDenied:
+        return False
+    return True
+
+
 def check_permission(role: Role, action: Action) -> None:
     """Raise when a role lacks an action; quote-specific rules belong to workflow checks."""
     if not isinstance(role, Role):

@@ -1,0 +1,32 @@
+# Run the data check and the test suite on every push and pull request.
+# The matrix covers every Python version the README promises (3.11+), not only the one on the
+# development machine, so that promise is actually tested.
+name: tests
+
+on:
+  push:
+  pull_request:
+
+# The workflow only needs to read the code; it never writes to the repository.
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # Show every failing Python version, not just the first.
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Check fake data files
+        run: python -m tools.check_data
+      - name: Run tests
+        run: python -m pytest -q
