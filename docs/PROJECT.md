@@ -88,31 +88,47 @@ steps always produce the same audit log.
      clarification.
   3. Repository tidy-up: `tools/check_data.py`, CI, this overview, terminal demo rebuilt on
      `QuoteDesk`.
+- Server fix: the request body is read before a request is rejected, so Windows clients get the
+  400 answer instead of a connection reset.
+- Interim decisions on the open questions recorded (2026-11-15); engineer review still pending.
 - Test counts per file are listed in the [README](../README.md#test-results).
 
 ## Open questions (pending engineer review)
 
-These are deliberately undecided. The code denies or flags them rather than guessing, and keeps
-the current behaviour described after each question until an answer is recorded in CLAUDE.md
-under "Changes after engineer review".
+These are deliberately undecided. The code denies or flags them rather than guessing.
+
+**Interim decision (2026-11-15):** the engineer was not available, so the project owner kept the
+current behaviour described after each question. These are interim decisions, not engineer
+answers: the questions stay open, and an answer will be recorded in CLAUDE.md under "Changes
+after engineer review". Where a test pins the current behaviour, it is named, so changing the
+behaviour later makes that test fail on purpose.
 
 **Authority and workflow**
 
 1. **Who may revise a rejected quote (REJECTED → DRAFT)?** Every role is currently denied, and
-   each attempt is audited.
+   each attempt is audited. Pinned by `test_rejected_quote_cannot_be_revised_while_authority_is_tbd`.
 2. **Who may edit an approved quote (it returns to DRAFT and loses its approval), and which price
    list do edited lines use: the line's original version or the newest one?** Every role is
-   currently denied, and each attempt is audited.
+   currently denied, and each attempt is audited. Pinned by
+   `test_approved_quote_cannot_be_edited_while_authority_is_tbd` and
+   `test_editing_approved_quote_is_denied_until_authority_is_decided`.
 3. **Who may publish a new price-list version?** Today it is a file added to `data/` and listed in
    `config.py`; there is no publishing role.
 4. **May the person who submitted a quote also send it, or should sending be separated like
-   approval?** Currently any SALES user may send an approved quote, including its submitter.
+   approval?** Currently any SALES user may send an approved quote, including its submitter. With
+   auto-approval this means one person can submit and send with no second person involved. Pinned
+   by `test_submitter_may_send_auto_approved_quote_while_separation_is_undecided`.
+   *If sending is separated later:* a trial change (2026-11-15) made 7 tests fail — the pinning
+   test, `test_agent_draft_to_sent_flow_records_every_step`, `test_editing_sent_quote_is_rejected`,
+   and the 4 tests in `test_demo.py`, because the demo's SALES user submits and sends. The rule
+   belongs in `approval.py` `send` and needs its own error message; the existing
+   creator/submitter check says "cannot approve or reject" and should not be reused as is.
 
 **Policy**
 
 5. **Should a customer-requested discount replace the volume rule?** The agent currently uses the
    customer's figure as stated (within the maximum) and writes the volume-rule figure in its note
-   for the approver.
+   for the approver. Pinned by `test_requested_discount_overrides_volume_rule_and_is_explained`.
 6. **What are the real values for the maximum line discount, the auto-approval threshold, and the
    VAT rate?** The demos use illustrative values from `config.py` (30%, 10%, 10%); the library
    requires them as parameters and has no defaults.
@@ -120,8 +136,11 @@ under "Changes after engineer review".
 **Audit**
 
 7. **Should reading a quote be audited?** It is, including whether cost and margin were visible.
+   Pinned by `test_viewing_quote_is_audited_with_cost_visibility`.
 8. **Should a request the agent could not understand be audited?** It is not: nothing was
-   attempted on a quote. The browser shows the question instead.
+   attempted on a quote. The browser shows the question instead. Pinned by
+   `test_unknown_product_fails_before_any_quote_is_created` and
+   `test_requested_discount_above_maximum_is_asked_before_creating_quote`.
 9. **Which roles may read the audit log?** The library exposes read-only copies to its caller; in
    the browser demo every role sees the whole log, including the reasons for denials.
 
@@ -133,6 +152,10 @@ under "Changes after engineer review".
   so unusual wording leads to a question, not a wrong quote.
 - Published price-list files are not protected against being edited in place; the rule "a
   published version never changes" is enforced in memory and by review, not by the file system.
+- A rejected quote cannot be reworked and an approved quote cannot be edited: both paths exist in
+  the transition table but no role may use them until questions 1 and 2 are answered.
+- When every discount is within the auto-approval threshold, one SALES user can submit and send a
+  quote with no second person involved (question 4).
 
 ## Workflow and deployment
 

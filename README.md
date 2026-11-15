@@ -14,7 +14,7 @@ All data is fake; the simulated agent is rule-based and does not call an LLM or 
 ## Workflow
 
 The current draft workflow map is in [docs/workflow.md](docs/workflow.md) and is pending engineer
-review. The repository layout, architecture, module map, and open questions are in
+review; until then, open points use interim decisions listed at the end of that file. The repository layout, architecture, module map, and open questions are in
 [docs/PROJECT.md](docs/PROJECT.md).
 
 ## Design decisions
@@ -93,7 +93,7 @@ server replays them on a fresh in-memory desk for every click. See
 
 ## Test results
 
-Verified with `python -m pytest -q`: 156 tests passed.
+Verified with `python -m pytest -q`: 157 tests passed.
 
 - `tests/test_access.py` — 20 tests.
 - `tests/test_agent.py` — 23 tests.
@@ -104,7 +104,7 @@ Verified with `python -m pytest -q`: 156 tests passed.
 - `tests/test_interpret.py` — 9 tests.
 - `tests/test_pricing.py` — 14 tests.
 - `tests/test_server.py` — 17 tests.
-- `tests/test_service.py` — 16 tests.
+- `tests/test_service.py` — 17 tests.
 - `tests/test_users.py` — 5 tests.
 - `tests/test_views.py` — 8 tests.
 
@@ -117,7 +117,10 @@ This is a small rule-based simulator using fake data, without persistent storage
 delivery. The standard-library web server is an educational demo, not a production-hardened service;
 it has no accounts and must not receive real customer or pricing data. The workflow is a draft and
 is subject to engineer review. Authorization for revising a rejected quote and editing an approved
-quote remains deliberately unresolved and denied; the demo does not exercise those paths.
+quote remains deliberately unresolved and denied; the demo does not exercise those paths. When
+every discount is within the auto-approval threshold, one SALES user can submit and send a quote
+with no second person involved. These are interim decisions by the project owner while the
+engineer review is pending; see the open questions in [docs/PROJECT.md](docs/PROJECT.md).
 
 ## AI assistance
 
