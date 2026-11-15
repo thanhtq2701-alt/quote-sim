@@ -111,6 +111,6 @@ Problem, Workflow (link to docs), Design decisions, How to run, Test results (re
 Limitations, AI assistance (honest: what AI generated vs what I specified, decided, and changed).
 
 ## Progress log
-- Current phase: 6 complete; extension steps 1–2 complete (QuoteDesk, rule-based agent with plain-English understanding, server/ JSON API + web/ UI, 145 tests). Next: step 3 (tools/, CI, docs/PROJECT.md).
-- Decisions made: fake-data browser demo uses Python's standard-library HTTP server; no accounts or persistence; Render deployment instructions are documented; stateless replay server; old form demo replaced; all action buttons shown so denials are visible in the audit log; margin rounded to cents; discount input "30%"/"30" = percent, 0 < x <= 1 is asked (HTTP 422), never guessed.
+- Current phase: 6 complete; extension steps 1–3 complete (QuoteDesk, plain-English agent, browser simulator, tools/check_data, CI on Python 3.11–3.14, docs/PROJECT.md; 156 tests).
+- Decisions made: fake-data browser demo uses Python's standard-library HTTP server; no accounts or persistence; Render deployment instructions are documented; stateless replay server; old form demo replaced; all action buttons shown so denials are visible in the audit log; margin rounded to cents; discount input "30%"/"30" = percent, 0 < x <= 1 is asked (HTTP 422), never guessed. CI matrix 3.11–3.14 to verify the "3.11+" promise; terminal demo rebuilt on QuoteDesk; shared demo wiring in quote_sim/demo_data.py; docs in English.
 - Changes after engineer review: pending engineer review.

@@ -14,7 +14,8 @@ All data is fake; the simulated agent is rule-based and does not call an LLM or 
 ## Workflow
 
 The current draft workflow map is in [docs/workflow.md](docs/workflow.md) and is pending engineer
-review.
+review. The repository layout, architecture, module map, and open questions are in
+[docs/PROJECT.md](docs/PROJECT.md).
 
 ## Design decisions
 
@@ -55,8 +56,14 @@ In PowerShell, from the project root:
 py -3.14 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
+python -m tools.check_data
 python -m pytest
 ```
+
+`tools.check_data` checks the fake files in `data/` (every price list is listed in
+`quote_sim/config.py` and named after its version, every role has a user, every product sold in
+the newest price list has a cost). GitHub Actions runs the same two commands on Python 3.11, 3.12,
+3.13, and 3.14 for every push and pull request.
 
 The virtual environment is local and excluded from Git. Use a Python 3.11+ launcher version in
 place of `3.14` if needed.
@@ -67,8 +74,9 @@ Run the scripted demo from the project root:
 python -m quote_sim.demo
 ```
 
-It loads the fake v1 price list, creates and evidences a draft quote, submits it for manager
-approval, sends the approved quote, then prints its totals and audit entries.
+The agent drafts a quote from a plain-English request; sales submits it; a sales attempt to approve
+it is denied; a manager approves it; the same quote is shown to a manager (with margin) and a
+viewer (without); sales sends it. The audit log printed at the end is the one the desk wrote.
 
 Run the browser demo locally:
 
@@ -85,11 +93,13 @@ server replays them on a fresh in-memory desk for every click. See
 
 ## Test results
 
-Verified with `python -m pytest -q`: 145 tests passed.
+Verified with `python -m pytest -q`: 156 tests passed.
 
 - `tests/test_access.py` — 20 tests.
 - `tests/test_agent.py` — 23 tests.
 - `tests/test_approval.py` — 17 tests.
+- `tests/test_check_data.py` — 7 tests.
+- `tests/test_demo.py` — 4 tests.
 - `tests/test_evidence.py` — 16 tests.
 - `tests/test_interpret.py` — 9 tests.
 - `tests/test_pricing.py` — 14 tests.

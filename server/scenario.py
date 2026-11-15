@@ -7,45 +7,21 @@ no database, and makes the outcome deterministic: the same steps always give the
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from functools import lru_cache
 from typing import Any
 
 from quote_sim import config
-from quote_sim.agent import AgentPolicy, QuoteAgent, VolumeRule
-from quote_sim.approval import ApprovalPolicy
-from quote_sim.audit import AuditLog
-from quote_sim.costs import CostSheet, load_cost_sheet
-from quote_sim.evidence import PriceList, PriceListCatalog, load_price_list
+from quote_sim.demo_data import FakeData, load_fake_data, new_agent, new_desk
 from quote_sim.interpret import (
     AmbiguousDiscount,
     DiscountUnit,
     NeedsClarification,
     interpret_discount,
 )
-from quote_sim.models import PricingPolicy
 from quote_sim.service import EXPECTED_ERRORS, QuoteDesk
-from quote_sim.users import UserDirectory, load_users
 
 MAX_STEPS = 200
 PERCENT = Decimal("100")
-SIMULATION_START = datetime(2026, 1, 5, 9, 0, tzinfo=timezone.utc)
-SIMULATION_TICK = timedelta(minutes=1)
-
-PRICING_POLICY = PricingPolicy(
-    max_discount=config.DEMO_MAX_DISCOUNT,
-    vat_rate=config.DEMO_VAT_RATE,
-)
-APPROVAL_POLICY = ApprovalPolicy(
-    auto_approve_threshold=config.DEMO_AUTO_APPROVE_THRESHOLD,
-    rule_id=config.DEMO_AUTO_APPROVE_RULE_ID,
-)
-AGENT_POLICY = AgentPolicy(
-    list_price_rule_id=config.DEMO_LIST_PRICE_RULE_ID,
-    requested_discount_rule_id=config.DEMO_REQUESTED_DISCOUNT_RULE_ID,
-    volume_rules=tuple(VolumeRule(*rule) for rule in config.DEMO_VOLUME_RULES),
-)
 
 
 class StepFormatError(ValueError):
@@ -72,27 +48,6 @@ class ClarificationNeeded(Exception):
         ]
 
 
-class SimulatedClock:
-    """Advance one minute per audit entry so replayed timestamps are stable and readable."""
-
-    def __init__(self, start: datetime = SIMULATION_START) -> None:
-        self._next = start
-
-    def __call__(self) -> datetime:
-        current = self._next
-        self._next += SIMULATION_TICK
-        return current
-
-
-@dataclass(frozen=True)
-class FakeData:
-    """Immutable inputs loaded once; each replay builds its own mutable catalog and desk."""
-
-    users: UserDirectory
-    price_lists: tuple[PriceList, ...]
-    cost_sheet: CostSheet
-
-
 @dataclass(frozen=True)
 class StepResult:
     ok: bool
@@ -104,26 +59,6 @@ class StepResult:
 class ReplayResult:
     desk: QuoteDesk
     steps: tuple[StepResult, ...]
-
-
-@lru_cache(maxsize=1)
-def load_fake_data() -> FakeData:
-    return FakeData(
-        users=load_users(config.USERS_FILE),
-        price_lists=tuple(load_price_list(path) for path in config.PRICE_LIST_FILES),
-        cost_sheet=load_cost_sheet(config.COST_SHEET_FILE),
-    )
-
-
-def new_desk(data: FakeData) -> QuoteDesk:
-    return QuoteDesk(
-        users=data.users,
-        price_lists=PriceListCatalog(data.price_lists),
-        pricing_policy=PRICING_POLICY,
-        approval_policy=APPROVAL_POLICY,
-        audit_log=AuditLog(clock=SimulatedClock()),
-        cost_sheet=data.cost_sheet,
-    )
 
 
 def replay(steps: object, data: FakeData | None = None) -> ReplayResult:
@@ -161,7 +96,7 @@ def replay(steps: object, data: FakeData | None = None) -> ReplayResult:
 
 
 def _agent_draft(desk: QuoteDesk, step: Mapping[str, Any]) -> StepResult:
-    agent = QuoteAgent(desk, _text(step, "actor"), AGENT_POLICY)
+    agent = new_agent(desk, _text(step, "actor"))
     draft = agent.draft(
         _text(step, "request"),
         price_list_version=_optional_text(step, "price_list_version"),

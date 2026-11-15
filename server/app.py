@@ -19,8 +19,9 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from quote_sim.access import PermissionDenied
+from quote_sim.demo_data import load_fake_data
 
-from server.scenario import ClarificationNeeded, StepFormatError, load_fake_data, replay
+from server.scenario import ClarificationNeeded, StepFormatError, replay
 from server.serialize import catalog_json, replay_json
 
 WEB_DIRECTORY = Path(__file__).resolve().parents[1] / "web"

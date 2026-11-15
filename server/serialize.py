@@ -12,14 +12,9 @@ from quote_sim.audit import AuditEntry
 from quote_sim.users import User
 from quote_sim.views import LineView, QuoteView
 
-from server.scenario import (
-    AGENT_POLICY,
-    APPROVAL_POLICY,
-    PERCENT,
-    PRICING_POLICY,
-    FakeData,
-    ReplayResult,
-)
+from quote_sim.demo_data import AGENT_POLICY, APPROVAL_POLICY, PRICING_POLICY, FakeData
+
+from server.scenario import PERCENT, ReplayResult
 
 
 def percent_text(fraction: Decimal) -> str:
