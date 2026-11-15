@@ -92,17 +92,38 @@ steps always produce the same audit log.
 
 ## Open questions (pending engineer review)
 
-These are deliberately undecided. The code denies or flags them rather than guessing.
+These are deliberately undecided. The code denies or flags them rather than guessing, and keeps
+the current behaviour described after each question until an answer is recorded in CLAUDE.md
+under "Changes after engineer review".
 
-- **Who may revise a rejected quote, or edit an approved one?** Both paths exist in the
-  transition table but every role is currently denied, and each attempt is audited.
-- **Who may publish a new price-list version?** Today it is a file added to `data/` and listed in
-  `config.py`; there is no publishing role.
-- **Should a customer-requested discount replace the volume rule?** The agent currently uses the
-  customer's figure as stated and writes the volume-rule figure in its note for the approver.
-- **Should reads be audited?** They are, with whether cost and margin were visible.
-- **Should a request the agent could not understand be audited?** It is not: nothing was attempted
-  on a quote. The browser shows the question instead.
+**Authority and workflow**
+
+1. **Who may revise a rejected quote (REJECTED → DRAFT)?** Every role is currently denied, and
+   each attempt is audited.
+2. **Who may edit an approved quote (it returns to DRAFT and loses its approval), and which price
+   list do edited lines use: the line's original version or the newest one?** Every role is
+   currently denied, and each attempt is audited.
+3. **Who may publish a new price-list version?** Today it is a file added to `data/` and listed in
+   `config.py`; there is no publishing role.
+4. **May the person who submitted a quote also send it, or should sending be separated like
+   approval?** Currently any SALES user may send an approved quote, including its submitter.
+
+**Policy**
+
+5. **Should a customer-requested discount replace the volume rule?** The agent currently uses the
+   customer's figure as stated (within the maximum) and writes the volume-rule figure in its note
+   for the approver.
+6. **What are the real values for the maximum line discount, the auto-approval threshold, and the
+   VAT rate?** The demos use illustrative values from `config.py` (30%, 10%, 10%); the library
+   requires them as parameters and has no defaults.
+
+**Audit**
+
+7. **Should reading a quote be audited?** It is, including whether cost and margin were visible.
+8. **Should a request the agent could not understand be audited?** It is not: nothing was
+   attempted on a quote. The browser shows the question instead.
+9. **Which roles may read the audit log?** The library exposes read-only copies to its caller; in
+   the browser demo every role sees the whole log, including the reasons for denials.
 
 ## Limitations
 

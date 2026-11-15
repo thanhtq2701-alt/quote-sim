@@ -26,6 +26,9 @@ from server.serialize import catalog_json, replay_json
 
 WEB_DIRECTORY = Path(__file__).resolve().parents[1] / "web"
 MAX_REQUEST_BYTES = 64 * 1024
+# How much of an oversized body we read and throw away before answering. Reading it avoids a
+# connection reset (see _read_json_body); the cap stops a client from making us read forever.
+MAX_DISCARD_BYTES = 2 * MAX_REQUEST_BYTES
 REQUEST_TIMEOUT_SECONDS = 10
 DEFAULT_PORT = 8000
 
@@ -104,17 +107,21 @@ class QuoteSimHandler(BaseHTTPRequestHandler):
             super().log_message(format, *args)
 
     def _read_json_body(self) -> object:
-        content_type = self.headers.get("Content-Type", "").split(";", maxsplit=1)[0]
-        if content_type.strip().lower() != "application/json":
-            raise BadRequest("Content-Type must be application/json")
+        # The body is read BEFORE the other checks. If we answer 400 and close the connection
+        # while the client's body is still unread, Windows sends a reset (RST) and the client
+        # may get a connection error instead of our answer.
         length_text = self.headers.get("Content-Length", "")
         if not length_text.isascii() or not length_text.isdecimal():
             raise BadRequest("Content-Length is required")
         length = int(length_text)
-        if length > MAX_REQUEST_BYTES:
-            raise BadRequest("request is too large")
         self.connection.settimeout(REQUEST_TIMEOUT_SECONDS)
+        if length > MAX_REQUEST_BYTES:
+            self.rfile.read(min(length, MAX_DISCARD_BYTES))
+            raise BadRequest("request is too large")
         raw = self.rfile.read(length)
+        content_type = self.headers.get("Content-Type", "").split(";", maxsplit=1)[0]
+        if content_type.strip().lower() != "application/json":
+            raise BadRequest("Content-Type must be application/json")
         try:
             # parse_float=Decimal means no binary float is ever created from request data.
             return json.loads(
