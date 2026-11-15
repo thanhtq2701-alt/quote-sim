@@ -79,10 +79,21 @@ def calculate_quote_totals(
     line_totals = tuple(
         calculate_line_total(line_item, catalog, policy) for line_item in line_items
     )
-    subtotal = sum(line_totals, USD_ZERO)
+    return summarize_line_totals(line_totals, policy)
+
+
+def summarize_line_totals(
+    line_totals: Sequence[Decimal],
+    policy: PricingPolicy,
+) -> QuoteTotals:
+    """Share one VAT rule for callers whose lines come from different price-list versions."""
+    totals = tuple(line_totals)
+    for line_total in totals:
+        _validate_decimal(line_total, "line_total")
+    subtotal = sum(totals, USD_ZERO)
     vat = (subtotal * _validate_policy(policy)).quantize(USD_CENT, rounding=ROUND_HALF_UP)
     return QuoteTotals(
-        line_totals=line_totals,
+        line_totals=totals,
         subtotal=subtotal,
         vat=vat,
         total=subtotal + vat,
@@ -106,8 +117,9 @@ def validate_discount(discount: Decimal, policy: PricingPolicy) -> None:
     _validate_policy(policy)
     _validate_decimal(discount, "discount")
     if discount < DISCOUNT_MIN or discount > policy.max_discount:
+        max_percent = format((policy.max_discount * 100).normalize(), "f")
         raise ValidationError(
-            f"discount must be between 0 and {policy.max_discount}"
+            f"discount must be between 0 and {policy.max_discount} (= {max_percent}%)"
         )
 
 

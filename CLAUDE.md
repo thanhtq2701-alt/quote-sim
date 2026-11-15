@@ -111,6 +111,6 @@ Problem, Workflow (link to docs), Design decisions, How to run, Test results (re
 Limitations, AI assistance (honest: what AI generated vs what I specified, decided, and changed).
 
 ## Progress log
-- Current phase: 6 complete; public web-demo extension added after the original phase plan.
-- Decisions made: fake-data browser demo uses Python's standard-library HTTP server; no accounts or persistence; Render deployment instructions are documented.
+- Current phase: 6 complete; extension steps 1–2 complete (QuoteDesk, rule-based agent with plain-English understanding, server/ JSON API + web/ UI, 145 tests). Next: step 3 (tools/, CI, docs/PROJECT.md).
+- Decisions made: fake-data browser demo uses Python's standard-library HTTP server; no accounts or persistence; Render deployment instructions are documented; stateless replay server; old form demo replaced; all action buttons shown so denials are visible in the audit log; margin rounded to cents; discount input "30%"/"30" = percent, 0 < x <= 1 is asked (HTTP 422), never guessed.
 - Changes after engineer review: pending engineer review.

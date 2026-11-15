@@ -51,6 +51,13 @@ class PriceListCatalog:
     def versions(self) -> tuple[str, ...]:
         return tuple(self._versions)
 
+    @property
+    def latest_version(self) -> str:
+        """Use publication order, not string sorting, so "v10" cannot sort before "v9"."""
+        if not self._versions:
+            raise MissingEvidence("no price-list version has been published")
+        return next(reversed(self._versions))
+
     def publish(self, price_list: PriceList) -> None:
         if not isinstance(price_list, PriceList):
             raise TypeError("price_list must be a PriceList")

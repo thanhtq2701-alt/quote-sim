@@ -203,3 +203,19 @@ def test_old_line_snapshot_validates_after_new_version_is_published() -> None:
     assert line_item.unit_price == Decimal("10.00")
     assert line_item.evidence is not None
     assert line_item.evidence.price_list_version == "v1"
+
+
+def test_latest_version_follows_publication_order_not_string_order() -> None:
+    catalog = PriceListCatalog(
+        [
+            PriceList("v9", {"sample-widget": Decimal("10.00")}),
+            PriceList("v10", {"sample-widget": Decimal("11.00")}),
+        ]
+    )
+
+    assert catalog.latest_version == "v10"
+
+
+def test_latest_version_with_nothing_published_raises_missing_evidence() -> None:
+    with pytest.raises(MissingEvidence, match="no price-list version"):
+        PriceListCatalog().latest_version

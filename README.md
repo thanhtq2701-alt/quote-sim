@@ -36,6 +36,16 @@ review.
   version, unit-price snapshot, and explicit discount-rule id. Submission requires valid evidence.
 - The demo's named pricing and approval values are illustrative scenario inputs, not application
   defaults.
+- Every action goes through `QuoteDesk`, which looks the actor's role up in the fake user
+  directory (callers cannot claim a role) and audits creates, edits, and reads as well as
+  workflow transitions. Margin is visible only to MANAGER and is rounded to cents like other
+  money values.
+- The simulated agent is rule-based. It understands plain-English requests (quantities as digits
+  or words, short product names, plurals, one discount, a price-list version) and asks instead of
+  guessing whenever something is unclear; a misunderstood request creates nothing.
+- Discount input: `10%` or `10 percent` is a percentage; a number above 1 can only be a
+  percentage; `0` is zero; a number from 0 to 1 (such as `0.3`) is ambiguous, so the person is
+  asked whether they meant 0.3% or 30%.
 
 ## How to run
 
@@ -63,21 +73,33 @@ approval, sends the approved quote, then prints its totals and audit entries.
 Run the browser demo locally:
 
 ```powershell
-python -m quote_sim.web
+python -m server
 ```
 
-Open `http://localhost:8000`. The form simulates a quote for fake data without saving it. See
+Open `http://localhost:8000`. Pick who you are acting as, ask the rule-based agent to draft a
+quote, then submit, approve, reject, or send it as different users. Quotes are shown from the
+acting user's point of view (only managers see cost and margin), and the audit log lists every
+attempt, including denied ones. Nothing is saved: the browser keeps the list of steps and the
+server replays them on a fresh in-memory desk for every click. See
 [docs/deployment.md](docs/deployment.md) for public hosting instructions.
 
 ## Test results
 
-Verified with `python -m pytest -q`: 71 tests passed.
+Verified with `python -m pytest -q`: 145 tests passed.
 
-- `tests/test_pricing.py` — 14 tests.
-- `tests/test_access.py` — 19 tests.
+- `tests/test_access.py` — 20 tests.
+- `tests/test_agent.py` — 23 tests.
 - `tests/test_approval.py` — 17 tests.
-- `tests/test_evidence.py` — 14 tests.
-- `tests/test_web.py` — 7 tests.
+- `tests/test_evidence.py` — 16 tests.
+- `tests/test_interpret.py` — 9 tests.
+- `tests/test_pricing.py` — 14 tests.
+- `tests/test_server.py` — 17 tests.
+- `tests/test_service.py` — 16 tests.
+- `tests/test_users.py` — 5 tests.
+- `tests/test_views.py` — 8 tests.
+
+Counts include parametrized cases (one test function run with several inputs counts once per
+input).
 
 ## Limitations
 
