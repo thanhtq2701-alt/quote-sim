@@ -1,0 +1,4 @@
+# Every text file uses LF line endings, in the repository and in every checkout.
+# Why: CI runs on Linux, and a rule kept in the repo applies to everyone who clones it,
+# whatever their own core.autocrlf setting is.
+* text=auto eol=lf

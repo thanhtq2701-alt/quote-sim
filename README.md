@@ -47,6 +47,10 @@ review; until then, open points use interim decisions listed at the end of that 
 - Discount input: `10%` or `10 percent` is a percentage; a number above 1 can only be a
   percentage; `0` is zero; a number from 0 to 1 (such as `0.3`) is ambiguous, so the person is
   asked whether they meant 0.3% or 30%.
+- The `main` branch is protected by a GitHub ruleset: it cannot be deleted or force-pushed, and
+  every change arrives through a pull request whose CI checks pass on Python 3.11–3.14.
+- `.gitattributes` stores and checks out every text file with LF line endings, so Windows and
+  Linux (CI) see identical files whatever each machine's `core.autocrlf` setting is.
 
 ## How to run
 
