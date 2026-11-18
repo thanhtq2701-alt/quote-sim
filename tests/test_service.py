@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from quote_sim.access import PermissionDenied
+from quote_sim.access import PermissionDenied, Role
 from quote_sim.approval import InvalidTransition
 from quote_sim.audit import AuditLog
 from quote_sim.evidence import PriceList
@@ -10,7 +10,7 @@ from quote_sim.models import QuoteState
 from quote_sim.pricing import ValidationError
 from quote_sim.service import QuoteDesk
 
-from conftest import TEST_RULE_ID
+from conftest import TEST_APPROVAL_POLICY, TEST_RULE_ID
 
 ABOVE_AUTO_APPROVE = Decimal("0.20")
 
@@ -240,3 +240,21 @@ def test_agent_draft_to_sent_flow_records_every_step(
         ("manager-1", "approve_quote"),
         ("sales-1", "send_quote"),
     ]
+
+
+def test_submitter_may_send_auto_approved_quote_while_separation_is_undecided(
+    desk: QuoteDesk, audit_log: AuditLog
+) -> None:
+    # Open question 4 (docs/PROJECT.md): with auto-approval, one SALES user can take a quote
+    # from submit to the customer with no second person. Kept as an interim decision; if
+    # sending is later separated like approval, this test should fail and be rewritten.
+    quote_id = draft_with_widget(desk, discount=TEST_APPROVAL_POLICY.auto_approve_threshold)
+    submitted = desk.submit("sales-1", quote_id)
+    sent = desk.send("sales-1", quote_id)
+
+    assert submitted.approved_by == "policy"
+    assert sent.state is QuoteState.SENT
+    assert all(entry.role != Role.MANAGER.value for entry in audit_log.entries)
+    last = audit_log.entries[-1]
+    assert (last.actor_id, last.action, last.to_state) == ("sales-1", "send_quote", QuoteState.SENT)
+    assert "result" not in last.details
