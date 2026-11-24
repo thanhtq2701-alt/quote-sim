@@ -44,6 +44,9 @@ CONTENT_SECURITY_POLICY = (
     "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; "
     "img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
 )
+# Tells browsers to use HTTPS for this site for a year, even if someone types or links "http://".
+# Browsers ignore it on plain-HTTP responses, so local use on http://localhost is unaffected.
+STRICT_TRANSPORT_SECURITY = "max-age=31536000"
 
 
 class BadRequest(ValueError):
@@ -54,6 +57,10 @@ class QuoteSimHandler(BaseHTTPRequestHandler):
     """Every request is independent: nothing is stored between requests."""
 
     server_version = "quote-sim"
+    # The standard library applies this to the socket as soon as a connection opens, so it limits
+    # reading the headers as well as the body. Without it, a client sending headers very slowly
+    # could hold a server thread forever.
+    timeout = REQUEST_TIMEOUT_SECONDS
 
     def do_GET(self) -> None:
         path = urlsplit(self.path).path
@@ -114,7 +121,6 @@ class QuoteSimHandler(BaseHTTPRequestHandler):
         if not length_text.isascii() or not length_text.isdecimal():
             raise BadRequest("Content-Length is required")
         length = int(length_text)
-        self.connection.settimeout(REQUEST_TIMEOUT_SECONDS)
         if length > MAX_REQUEST_BYTES:
             self.rfile.read(min(length, MAX_DISCARD_BYTES))
             raise BadRequest("request is too large")
@@ -129,7 +135,9 @@ class QuoteSimHandler(BaseHTTPRequestHandler):
                 parse_float=Decimal,
                 parse_constant=_reject_constant,
             )
-        except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as error:
+        # RecursionError: a small body such as 20,000 nested "[" exhausts the parser's stack.
+        # Without catching it the thread dies and the client gets no answer at all.
+        except (UnicodeDecodeError, json.JSONDecodeError, ValueError, RecursionError) as error:
             raise BadRequest("request body is not valid JSON") from error
 
     def _send_json(self, status: int, payload: object) -> None:
@@ -144,6 +152,7 @@ class QuoteSimHandler(BaseHTTPRequestHandler):
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("Content-Security-Policy", CONTENT_SECURITY_POLICY)
+        self.send_header("Strict-Transport-Security", STRICT_TRANSPORT_SECURITY)
         self.end_headers()
         self.wfile.write(body)
 

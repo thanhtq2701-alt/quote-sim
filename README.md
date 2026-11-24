@@ -1,11 +1,28 @@
 # quote-sim
 
+[![tests](https://github.com/thanhtq2701-alt/quote-sim/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/thanhtq2701-alt/quote-sim/actions/workflows/tests.yml)
+![Python 3.11–3.14](https://img.shields.io/badge/python-3.11%E2%80%933.14-3776AB?logo=python&logoColor=white)
+![Dependencies: standard library + pytest](https://img.shields.io/badge/dependencies-stdlib%20%2B%20pytest-informational)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Live demo](https://img.shields.io/badge/live%20demo-onrender.com-46E3B7?logo=render&logoColor=white)](https://quote-sim.onrender.com)
+
 A small Python simulator for learning how an AI-agent-assisted sales-quote workflow can keep human
 approval, access control, evidence, and audit history explicit. It uses fake data and makes no real
 LLM or external API calls.
 
 **Live demo:** https://quote-sim.onrender.com (fake data only; the free server sleeps when idle, so
 the first visit can take about a minute).
+
+**At a glance**
+
+- **Humans stay in control:** the simulated agent can only create and edit drafts; sales submits
+  and sends; a manager approves, but never a quote they created or submitted.
+- **Every number has evidence:** each line keeps its price-list version, unit-price snapshot, and
+  discount rule, and a quote without valid evidence cannot be submitted.
+- **Policy, not guesswork:** low discounts are approved by a named policy rule; anything above the
+  threshold waits for a manager.
+- **Everything is audited:** an append-only log records every action, including denied attempts.
+- **Cost is need-to-know:** only managers see cost and margin.
 
 ## Problem
 
@@ -57,6 +74,9 @@ review; until then, open points use interim decisions listed at the end of that 
 - The browser demo is hosted on Render from `render.yaml`, so its settings are reviewed in pull
   requests. It deploys only after CI passes on `main`, runs Python 3.14.10 (a version CI tests),
   and its build runs the fake-data check instead of installing anything.
+- The web server serves only a fixed list of files, limits requests to 64 KiB and 200 steps,
+  answers malformed JSON (including deeply nested JSON) with HTTP 400, closes connections that stay
+  idle for 10 seconds, and sends a strict Content-Security-Policy and an HSTS header.
 
 ## How to run
 
@@ -103,7 +123,7 @@ https://quote-sim.onrender.com; see [docs/deployment.md](docs/deployment.md) for
 
 ## Test results
 
-Verified with `python -m pytest -q`: 157 tests passed.
+Verified with `python -m pytest -q`: 159 tests passed.
 
 - `tests/test_access.py` — 20 tests.
 - `tests/test_agent.py` — 23 tests.
@@ -113,7 +133,7 @@ Verified with `python -m pytest -q`: 157 tests passed.
 - `tests/test_evidence.py` — 16 tests.
 - `tests/test_interpret.py` — 9 tests.
 - `tests/test_pricing.py` — 14 tests.
-- `tests/test_server.py` — 17 tests.
+- `tests/test_server.py` — 19 tests.
 - `tests/test_service.py` — 17 tests.
 - `tests/test_users.py` — 5 tests.
 - `tests/test_views.py` — 8 tests.

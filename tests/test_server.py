@@ -1,4 +1,5 @@
 import json
+import socket
 from collections.abc import Iterator
 from http.client import HTTPConnection
 from http.server import ThreadingHTTPServer
@@ -7,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from server.app import MAX_REQUEST_BYTES, QuoteSimHandler
+from server.app import MAX_REQUEST_BYTES, REQUEST_TIMEOUT_SECONDS, QuoteSimHandler
 from server.scenario import MAX_STEPS, StepFormatError, replay
 
 AGENT_DRAFT = {"action": "agent_draft", "actor": "agent-01", "request": "60 x sample-widget"}
@@ -137,6 +138,7 @@ def test_page_and_assets_are_served_with_security_headers(port: int) -> None:
         assert headers["Content-Type"].startswith(content_type)
         assert "script-src 'self'" in headers["Content-Security-Policy"]
         assert headers["X-Content-Type-Options"] == "nosniff"
+        assert headers["Strict-Transport-Security"].startswith("max-age=")
 
 
 def test_path_outside_whitelist_returns_404(port: int) -> None:
@@ -213,6 +215,35 @@ def test_nan_in_request_body_returns_400(port: int) -> None:
 
     assert status == 400
     assert "not valid JSON" in json.loads(body)["error"]
+
+
+def test_deeply_nested_json_is_rejected_with_400(port: int) -> None:
+    depth = 20_000  # About 40 KB: under the size limit.
+    body = b'{"viewer": "sales-01", "steps": ' + b"[" * depth + b"]" * depth + b"}"
+
+    status, _, response = request(port, "POST", "/api/replay", body)
+
+    # Only the status is checked, not the message. Python 3.14 sizes the parser's limit by the
+    # thread's real stack: on Windows (about 1 MB) parsing fails with RecursionError ("not valid
+    # JSON"); on Linux (8 MB) it succeeds and the steps are refused as malformed. Either way the
+    # client must get a 400, never a dropped connection.
+    assert status == 400
+    assert "error" in json.loads(response)
+
+
+def test_slow_client_is_disconnected_after_timeout(
+    port: int, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The standard library default is None (wait forever), so this line fails without the fix.
+    assert QuoteSimHandler.timeout == REQUEST_TIMEOUT_SECONDS
+    # A short timeout keeps the test fast; the server reads it when the connection opens.
+    monkeypatch.setattr(QuoteSimHandler, "timeout", 0.5)
+    with socket.create_connection(("127.0.0.1", port), timeout=5) as client:
+        client.sendall(b"GET / HTTP/1.0\r\n")  # The request line, then the headers never finish.
+
+        # The server closes the connection without answering. If it kept waiting, recv would
+        # raise TimeoutError after our own 5 seconds and the test would fail.
+        assert client.recv(1024) == b""
 
 
 def ambiguous_line(**extra: str) -> dict[str, Any]:
