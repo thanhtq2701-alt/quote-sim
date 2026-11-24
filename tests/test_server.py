@@ -218,13 +218,17 @@ def test_nan_in_request_body_returns_400(port: int) -> None:
 
 
 def test_deeply_nested_json_is_rejected_with_400(port: int) -> None:
-    depth = 20_000  # About 40 KB: under the size limit, far beyond the JSON parser's stack.
+    depth = 20_000  # About 40 KB: under the size limit.
     body = b'{"viewer": "sales-01", "steps": ' + b"[" * depth + b"]" * depth + b"}"
 
     status, _, response = request(port, "POST", "/api/replay", body)
 
+    # Only the status is checked, not the message. Python 3.14 sizes the parser's limit by the
+    # thread's real stack: on Windows (about 1 MB) parsing fails with RecursionError ("not valid
+    # JSON"); on Linux (8 MB) it succeeds and the steps are refused as malformed. Either way the
+    # client must get a 400, never a dropped connection.
     assert status == 400
-    assert "not valid JSON" in json.loads(response)["error"]
+    assert "error" in json.loads(response)
 
 
 def test_slow_client_is_disconnected_after_timeout(
