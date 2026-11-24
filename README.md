@@ -4,6 +4,9 @@ A small Python simulator for learning how an AI-agent-assisted sales-quote workf
 approval, access control, evidence, and audit history explicit. It uses fake data and makes no real
 LLM or external API calls.
 
+**Live demo:** https://quote-sim.onrender.com (fake data only; the free server sleeps when idle, so
+the first visit can take about a minute).
+
 ## Problem
 
 Sales quotes can be difficult to review when pricing evidence, permissions, and approval history
@@ -51,6 +54,9 @@ review; until then, open points use interim decisions listed at the end of that 
   every change arrives through a pull request whose CI checks pass on Python 3.11–3.14.
 - `.gitattributes` stores and checks out every text file with LF line endings, so Windows and
   Linux (CI) see identical files whatever each machine's `core.autocrlf` setting is.
+- The browser demo is hosted on Render from `render.yaml`, so its settings are reviewed in pull
+  requests. It deploys only after CI passes on `main`, runs Python 3.14.10 (a version CI tests),
+  and its build runs the fake-data check instead of installing anything.
 
 ## How to run
 
@@ -92,8 +98,8 @@ Open `http://localhost:8000`. Pick who you are acting as, ask the rule-based age
 quote, then submit, approve, reject, or send it as different users. Quotes are shown from the
 acting user's point of view (only managers see cost and margin), and the audit log lists every
 attempt, including denied ones. Nothing is saved: the browser keeps the list of steps and the
-server replays them on a fresh in-memory desk for every click. See
-[docs/deployment.md](docs/deployment.md) for public hosting instructions.
+server replays them on a fresh in-memory desk for every click. The same demo runs publicly at
+https://quote-sim.onrender.com; see [docs/deployment.md](docs/deployment.md) for how it is hosted.
 
 ## Test results
 
@@ -119,7 +125,8 @@ input).
 
 This is a small rule-based simulator using fake data, without persistent storage or real quote
 delivery. The standard-library web server is an educational demo, not a production-hardened service;
-it has no accounts and must not receive real customer or pricing data. The workflow is a draft and
+it has no accounts and must not receive real customer or pricing data. The public demo runs on
+Render's free plan, so it sleeps after 15 idle minutes and may be restarted at any time. The workflow is a draft and
 is subject to engineer review. Authorization for revising a rejected quote and editing an approved
 quote remains deliberately unresolved and denied; the demo does not exercise those paths. When
 every discount is within the auto-approval threshold, one SALES user can submit and send a quote
