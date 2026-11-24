@@ -1,0 +1,24 @@
+# Render Blueprint for the browser demo (spec: https://render.com/docs/blueprint-spec).
+# Keeping the service settings in the repository makes them reviewable in a pull request,
+# instead of living only in the Render dashboard.
+services:
+  - type: web
+    name: quote-sim
+    runtime: python
+    plan: free # A fake-data learning demo; sleeping after 15 idle minutes is acceptable.
+    branch: main
+    # The server uses only the standard library, so nothing is installed (pytest is for CI).
+    # Checking the fake data here makes a broken data file fail the build, and the last good
+    # deploy keeps running.
+    buildCommand: python -m tools.check_data
+    startCommand: python -m server
+    # GET /api/catalog loads the fake data files on every request, so a 200 shows that the server
+    # and its data both work; the HTML page alone would only prove static files are served.
+    healthCheckPath: /api/catalog
+    # Deploy only after the CI checks pass on main, so an untested commit never goes live.
+    autoDeployTrigger: checksPass
+    envVars:
+      # A version CI tests (3.11-3.14) and the development machine uses. Render requires a full
+      # version here. To upgrade: add it to the CI matrix first, then change this value.
+      - key: PYTHON_VERSION
+        value: "3.14.10"
